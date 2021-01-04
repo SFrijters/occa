@@ -36,6 +36,13 @@ option(ENABLE_TESTS    "Build tests"               OFF)
 option(ENABLE_EXAMPLES "Build simple examples"     OFF)
 option(ENABLE_FORTRAN  "Enable Fortran interface"  OFF)
 
+option(ENABLE_SHARED   "Enable shared libraries" ON)
+option(ENABLE_STATIC   "Enable static libraries" OFF)
+
+if (NOT ENABLE_SHARED AND NOT ENABLE_STATIC)
+  message(FATAL_ERROR "Select at least one of ENABLE_SHARED or ENABLE_STATIC")
+endif()
+
 if(ENABLE_FORTRAN)
   enable_language(Fortran)
 endif()
@@ -77,28 +84,59 @@ if(ENABLE_FORTRAN)
 endif()
 #=======================================
 
-#---[ libocca.so ]----------------------
-add_library(libocca SHARED)
+if (ENABLE_SHARED)
+  #---[ libocca.so ]----------------------
+  message("-- Adding shared library")
+  add_library(libocca SHARED)
 
-# Without this, CMake will create liblibocca.so
-set_target_properties(libocca PROPERTIES
-  OUTPUT_NAME occa
-  LIBRARY_OUTPUT_DIRECTORY ${OCCA_BUILD_DIR}/lib)
+  # Without this, CMake will create liblibocca.so
+  set_target_properties(libocca PROPERTIES
+    OUTPUT_NAME occa
+    LIBRARY_OUTPUT_DIRECTORY ${OCCA_BUILD_DIR}/lib)
+endif()
+
+if (ENABLE_STATIC)
+  #---[ libocca_static.a -----------------
+  message("-- Adding static library")
+  add_library(libocca_static STATIC)
+
+  # Without this, CMake will create liblibocca_static.a
+  set_target_properties(libocca_static PROPERTIES
+    OUTPUT_NAME occa_static
+    LIBRARY_OUTPUT_DIRECTORY ${OCCA_BUILD_DIR}/lib)
+endif()
 
 # Find needed and requested packages
 find_package(Threads REQUIRED)
 
-target_link_libraries(libocca PRIVATE
-  ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
+if (ENABLE_SHARED)
+  target_link_libraries(libocca PRIVATE
+    ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
 
-target_include_directories(libocca PUBLIC
-  $<BUILD_INTERFACE:${OCCA_SOURCE_DIR}/include>
-  $<BUILD_INTERFACE:${OCCA_BUILD_DIR}/include>)
+  target_include_directories(libocca PUBLIC
+    $<BUILD_INTERFACE:${OCCA_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${OCCA_BUILD_DIR}/include>)
 
-target_include_directories(libocca PRIVATE
-  $<BUILD_INTERFACE:${OCCA_SOURCE_DIR}/src>)
+  target_include_directories(libocca PRIVATE
+    $<BUILD_INTERFACE:${OCCA_SOURCE_DIR}/src>)
 
-target_compile_definitions(libocca PRIVATE -DUSE_CMAKE)
+  target_compile_definitions(libocca PRIVATE -DUSE_CMAKE)
+endif()
+
+if (ENABLE_STATIC)
+  target_link_libraries(libocca_static PRIVATE
+    ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
+
+  target_include_directories(libocca_static PUBLIC
+    $<BUILD_INTERFACE:${OCCA_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${OCCA_BUILD_DIR}/include>)
+
+  target_include_directories(libocca_static PRIVATE
+    $<BUILD_INTERFACE:${OCCA_SOURCE_DIR}/src>)
+
+  target_compile_definitions(libocca_static PRIVATE -DUSE_CMAKE)
+endif()
+
 #=======================================
 
 #---[ OpenMP ]--------------------------
@@ -111,8 +149,14 @@ if(ENABLE_OPENMP)
     message("-- OpenMP include dirs: ${OpenMP_CXX_INCLUDE_DIRS}")
     message("-- OpenMP libraries:    ${OpenMP_CXX_LIBRARIES}")
 
-    target_include_directories(libocca PRIVATE ${OpenMP_CXX_INCLUDE_DIRS})
-    target_link_libraries(libocca PRIVATE ${OpenMP_CXX_LIBRARIES})
+    if (ENABLE_SHARED)
+      target_include_directories(libocca PRIVATE ${OpenMP_CXX_INCLUDE_DIRS})
+      target_link_libraries(libocca PRIVATE ${OpenMP_CXX_LIBRARIES})
+    endif()
+    if (ENABLE_STATIC)
+      target_include_directories(libocca_static PRIVATE ${OpenMP_CXX_INCLUDE_DIRS})
+      target_link_libraries(libocca_static PRIVATE ${OpenMP_CXX_LIBRARIES})
+    endif()
   else(OPENMP_CXX_FOUND)
     set(OCCA_OPENMP_ENABLED 0)
   endif(OPENMP_CXX_FOUND)
@@ -136,8 +180,14 @@ if(ENABLE_CUDA)
     message("-- CUDA include dirs: ${CUDA_INCLUDE_DIRS}")
     message("-- CUDA libraries:    ${CUDART_LIB};cuda}")
 
-    target_include_directories(libocca PRIVATE ${CUDA_INCLUDE_DIRS})
-    target_link_libraries(libocca PRIVATE ${CUDART_LIB} cuda)
+    if (ENABLE_SHARED)
+      target_include_directories(libocca PRIVATE ${CUDA_INCLUDE_DIRS})
+      target_link_libraries(libocca PRIVATE ${CUDART_LIB} cuda)
+    endif()
+    if (ENABLE_STATIC)
+      target_include_directories(libocca_static PRIVATE ${OpenMP_CXX_INCLUDE_DIRS})
+      target_link_libraries(libocca_static PRIVATE ${OpenMP_CXX_LIBRARIES})
+    endif()
   else (CUDA_FOUND)
     set(OCCA_CUDA_ENABLED 0)
   endif(CUDA_FOUND)
@@ -173,8 +223,14 @@ if(ENABLE_OPENCL)
     message("-- OpenCL include dirs: ${OpenCL_INCLUDE_DIRS}")
     message("-- OpenCL libraries:    ${OpenCL_LIBRARIES}")
 
-    target_include_directories(libocca PRIVATE ${OpenCL_INCLUDE_DIRS})
-    target_link_libraries(libocca PRIVATE ${OpenCL_LIBRARIES})
+    if (ENABLE_SHARED)
+      target_include_directories(libocca PRIVATE ${OpenCL_INCLUDE_DIRS})
+      target_link_libraries(libocca PRIVATE ${OpenCL_LIBRARIES})
+    endif()
+    if (ENABLE_STATIC)
+      target_include_directories(libocca_static PRIVATE ${OpenCL_INCLUDE_DIRS})
+      target_link_libraries(libocca_static PRIVATE ${OpenCL_LIBRARIES})
+    endif()
   else (OpenCL_FOUND)
     set(OCCA_OPENCL_ENABLED 0)
   endif(OpenCL_FOUND)
@@ -193,9 +249,16 @@ if(ENABLE_HIP)
     message("-- HIP include dirs: ${HIP_INCLUDE_DIRS}")
     message("-- HIP libraries:    ${HIP_LIBRARIES}")
 
-    target_compile_definitions(libocca PRIVATE -D${HIP_RUNTIME_DEFINE})
-    target_include_directories(libocca PRIVATE ${HIP_INCLUDE_DIRS})
-    target_link_libraries(libocca PRIVATE ${HIP_LIBRARIES})
+    if (ENABLE_SHARED)
+      target_compile_definitions(libocca PRIVATE -D${HIP_RUNTIME_DEFINE})
+      target_include_directories(libocca PRIVATE ${HIP_INCLUDE_DIRS})
+      target_link_libraries(libocca PRIVATE ${HIP_LIBRARIES})
+    endif()
+    if (ENABLE_STATIC)
+      target_compile_definitions(libocca_static PRIVATE -D${HIP_RUNTIME_DEFINE})
+      target_include_directories(libocca_static PRIVATE ${HIP_INCLUDE_DIRS})
+      target_link_libraries(libocca_static PRIVATE ${HIP_LIBRARIES})
+    endif()
   else (HIP_FOUND)
     set(OCCA_HIP_ENABLED 0)
   endif(HIP_FOUND)
@@ -230,8 +293,14 @@ if(ENABLE_MPI)
     message("-- MPI executable:   ${MPIEXEC_EXECUTABLE}")
     message("-- MPI numproc flag: ${MPIEXEC_NUMPROC_FLAG}")
 
-    target_include_directories(libocca PUBLIC ${MPI_CXX_INCLUDE_DIRS})
-    target_link_libraries(libocca PUBLIC ${MPI_CXX_LIBRARIES})
+    if (ENABLE_SHARED)
+      target_include_directories(libocca PUBLIC ${MPI_CXX_INCLUDE_DIRS})
+      target_link_libraries(libocca PUBLIC ${MPI_CXX_LIBRARIES})
+    endif()
+    if (ENABLE_STATIC)
+      target_include_directories(libocca_static PUBLIC ${MPI_CXX_INCLUDE_DIRS})
+      target_link_libraries(libocca_static PUBLIC ${MPI_CXX_LIBRARIES})
+    endif()
   else(MPI_FOUND)
     set(OCCA_MPI_ENABLED 0)
   endif(MPI_FOUND)
@@ -273,8 +342,14 @@ if(ENABLE_FORTRAN)
        TYPE FILE
        FILES \${public-modules})")
 
-  set_target_properties(libocca PROPERTIES
-    LINKER_LANGUAGE C)
+  if (ENABLE_SHARED)
+    set_target_properties(libocca PROPERTIES
+      LINKER_LANGUAGE C)
+  endif()
+  if (ENABLE_STATIC)
+    set_target_properties(libocca_static PROPERTIES
+      LINKER_LANGUAGE C)
+  endif()
 endif()
 
 if(OCCA_METAL_ENABLED)
@@ -287,9 +362,16 @@ set(OCCA_SRC
   ${OCCA_SRC_f90}
   ${OCCA_SRC_metal})
 
-target_sources(libocca PRIVATE ${OCCA_SRC})
+if (ENABLE_SHARED)
+  target_sources(libocca PRIVATE ${OCCA_SRC})
 
-install(TARGETS libocca DESTINATION lib)
+  install(TARGETS libocca DESTINATION lib)
+endif()
+if (ENABLE_STATIC)
+  target_sources(libocca_static PRIVATE ${OCCA_SRC})
+
+  install(TARGETS libocca_static DESTINATION lib)
+endif()
 install(DIRECTORY include/ DESTINATION include)
 
 if(ENABLE_TESTS)

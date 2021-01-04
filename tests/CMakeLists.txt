@@ -17,12 +17,20 @@ function(add_occa_test test_source)
     RUNTIME_OUTPUT_DIRECTORY ${test_directory})
 
   # Build config
-  target_link_libraries(${cmake_test_target} libocca ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
+  if (ENABLE_STATIC)
+    target_link_libraries(${cmake_test_target} libocca_static ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
+  else()
+    target_link_libraries(${cmake_test_target} libocca ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
+  endif()
   target_include_directories(${cmake_test_target} PRIVATE
     $<BUILD_INTERFACE:${OCCA_SOURCE_DIR}/src>)
 
   if (${test_source} MATCHES "typedefs.f90")
-    target_link_libraries(${cmake_test_target} libtypedefs_helper libocca ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
+    if (ENABLE_STATIC)
+      target_link_libraries(${cmake_test_target} libtypedefs_helper_static libocca_static ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
+    else()
+      target_link_libraries(${cmake_test_target} libtypedefs_helper libocca ${CMAKE_THREAD_LIBS_INIT} ${CMAKE_DL_LIBS})
+    endif()
   endif()
 
   add_test(
@@ -49,8 +57,13 @@ if (ENABLE_FORTRAN)
   list(FILTER occa_tests
     EXCLUDE REGEX "src/fortran/typedefs_helper.cpp")
 
-  add_library(libtypedefs_helper SHARED "src/fortran/typedefs_helper.cpp")
-  target_link_libraries(libtypedefs_helper libocca)
+  if (ENABLE_STATIC)
+    add_library(libtypedefs_helper_static STATIC "src/fortran/typedefs_helper.cpp")
+    target_link_libraries(libtypedefs_helper_static libocca_static)
+  else()
+    add_library(libtypedefs_helper SHARED "src/fortran/typedefs_helper.cpp")
+    target_link_libraries(libtypedefs_helper libocca)
+  endif()
 else()
   list(FILTER occa_tests
     EXCLUDE REGEX "src/fortran")
