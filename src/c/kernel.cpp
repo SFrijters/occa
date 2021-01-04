@@ -116,6 +116,46 @@ void occaKernelRunFromArgs(occaKernel kernel) {
   occa::c::kernel(kernel).run();
 }
 
+void occaKernelRunF01(occaKernel kernel,
+                      const int argc,
+                      occaType arg01) {
+  occaKernelRunN(kernel, argc, arg01);
+}
+
+void occaKernelRunF02(occaKernel kernel,
+                      const int argc,
+                      occaType arg01,
+                      occaType arg02) {
+  occaKernelRunN(kernel, argc, arg01, arg02);
+}
+
+void occaKernelRunF03(occaKernel kernel,
+                      const int argc,
+                      occaType arg01,
+                      occaType arg02,
+                      occaType arg03) {
+  occaKernelRunN(kernel, argc, arg01, arg02, arg03);
+}
+
+void occaKernelRunF04(occaKernel kernel,
+                      const int argc,
+                      occaType arg01,
+                      occaType arg02,
+                      occaType arg03,
+                      occaType arg04) {
+  occaKernelRunN(kernel, argc, arg01, arg02, arg03, arg04);
+}
+
+void occaKernelRunF05(occaKernel kernel,
+                      const int argc,
+                      occaType arg01,
+                      occaType arg02,
+                      occaType arg03,
+                      occaType arg04,
+                      occaType arg05) {
+  occaKernelRunN(kernel, argc, arg01, arg02, arg03, arg04, arg05);
+}
+
 // `occaKernelRun` is reserved for a variadic macro
 //    which is more user-friendly
 void occaKernelRunN(occaKernel kernel,

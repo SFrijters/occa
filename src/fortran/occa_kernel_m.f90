@@ -144,7 +144,7 @@ module occa_kernel_m
     ! void occaKernelRunN(occaKernel kernel, const int argc, ...);
     !
     subroutine occaKernelRunN01(kernel, argc, arg01) &
-               bind(C, name="occaKernelRunN")
+               bind(C, name="occaKernelRunF01")
       import occaKernel, C_int, occaType
       implicit none
       type(occaKernel), value :: kernel
@@ -153,7 +153,7 @@ module occa_kernel_m
     end subroutine
 
     subroutine occaKernelRunN02(kernel, argc, arg01, arg02) &
-               bind(C, name="occaKernelRunN")
+               bind(C, name="occaKernelRunF02")
       import occaKernel, C_int, occaType
       implicit none
       type(occaKernel), value :: kernel
@@ -162,7 +162,7 @@ module occa_kernel_m
     end subroutine
 
     subroutine occaKernelRunN03(kernel, argc, arg01, arg02, arg03) &
-               bind(C, name="occaKernelRunN")
+               bind(C, name="occaKernelRunF03")
       import occaKernel, C_int, occaType
       implicit none
       type(occaKernel), value :: kernel
@@ -171,7 +171,7 @@ module occa_kernel_m
     end subroutine
 
     subroutine occaKernelRunN04(kernel, argc, arg01, arg02, arg03, arg04) &
-               bind(C, name="occaKernelRunN")
+               bind(C, name="occaKernelRunF04")
       import occaKernel, C_int, occaType
       implicit none
       type(occaKernel), value :: kernel
@@ -181,7 +181,7 @@ module occa_kernel_m
 
     subroutine occaKernelRunN05(kernel, argc, arg01, arg02, arg03, arg04, &
                                               arg05) &
-               bind(C, name="occaKernelRunN")
+               bind(C, name="occaKernelRunF05")
       import occaKernel, C_int, occaType
       implicit none
       type(occaKernel), value :: kernel
